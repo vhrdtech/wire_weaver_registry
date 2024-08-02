@@ -1,0 +1,79 @@
+struct Request {
+    seq: u16,
+    path: Vec<nib16>,
+    kind: RequestKind,
+}
+
+enum RequestKind {
+    Version { protocol_id: u32, version: Version },
+    Call { args: Vec<u8> },
+    Read,
+    Write { value: Vec<u8> },
+    OpenStream,
+    CloseStream,
+    ChangeRate { shaper_config: ShaperConfig },
+    Subscribe,
+    Unsubscribe,
+    Borrow,
+    Release,
+    Introspect,
+    Heartbeat,
+}
+
+struct Event {
+    seq: u16,
+    // path: Vec<nib16>,
+    #[flag]
+    result: bool,
+    result: Result<EventKind, Error>,
+}
+
+enum EventKind {
+    Version { protocol_id: u32, version: Version },
+    ReturnValue { data: Vec<u8> },
+    ReadValue { data: Vec<u8> },
+    Written,
+    StreamOpened,
+    // TODO: Add Option<SizeHint>
+    StreamUpdate { path: Vec<nib16>, data: Vec<u8> },
+    StreamClosed,
+    Subscribed,
+    RateChanged,
+    Unsubscribed,
+    Borrowed,
+    Released,
+    Introspect { ww_bytes: Vec<u8> },
+    Heartbeat { data: Vec<u8> },
+}
+
+enum Error {
+    /// Tried to access a resource that was already borrowed
+    ResourceIsAlreadyBorrowed,
+    /// Tried to unsubscribe twice from a resource
+    AlreadyUnsubscribed,
+    /// Tried to open a stream twice
+    StreamIsAlreadyOpen,
+    /// Tried to close a stream twice
+    StreamIsAlreadyClosed,
+    /// Tried to write into a const or ro property, write into stream_out or read from stream_in.
+    OperationNotSupported,
+    /// Tried to access a path that doesn't exist
+    BadPath,
+    /// Tried to access a resource array using out of bounds index
+    BadIndex,
+    /// Tried to call a resource that is not a method
+    NotAMethod,
+}
+
+struct Version {
+    major: nib16,
+    minor: nib16,
+    patch: nib16,
+}
+
+enum ShaperConfig {
+    NoLimit,
+    MaxRate {
+        byte_per_s: u32
+    }
+}
