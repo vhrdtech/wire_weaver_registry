@@ -5,26 +5,28 @@ struct Request {
 }
 
 enum RequestKind {
-    Version { protocol_id: u32, version: Version },
+    Version,
     Call { args: Vec<u8> },
+    /// Read property
     Read,
-    Write { value: Vec<u8> },
+    /// Write property or stream down
+    Write { data: Vec<u8> },
     OpenStream,
     CloseStream,
     ChangeRate { shaper_config: ShaperConfig },
+    /// Subscribe to property changes
     Subscribe,
+    /// Unsubscribe from property changes
     Unsubscribe,
     Borrow,
     Release,
     Introspect,
-    Heartbeat,
+    // Heartbeat,
 }
 
 struct Event {
     seq: u16,
-    // path: Vec<nib16>,
-    #[flag]
-    result: bool,
+    // path
     result: Result<EventKind, Error>,
 }
 
@@ -43,7 +45,7 @@ enum EventKind {
     Borrowed,
     Released,
     Introspect { ww_bytes: Vec<u8> },
-    Heartbeat { data: Vec<u8> },
+    // Heartbeat { data: Vec<u8> },
 }
 
 enum Error {
@@ -55,14 +57,16 @@ enum Error {
     StreamIsAlreadyOpen,
     /// Tried to close a stream twice
     StreamIsAlreadyClosed,
-    /// Tried to write into a const or ro property, write into stream_out or read from stream_in.
+    /// Sent a RequestKind that doesn't make sense for a particular resource
     OperationNotSupported,
     /// Tried to access a path that doesn't exist
     BadPath,
     /// Tried to access a resource array using out of bounds index
     BadIndex,
-    /// Tried to call a resource that is not a method
-    NotAMethod,
+    /// Tried to get a byte slice out of Call, Write args, but shrink wrap returned an error, most likely malformed request.
+    ArgsDesFailed,
+    /// Request is good, but requested operation is not yet implemented
+    OperationNotImplemented,
 }
 
 struct Version {
