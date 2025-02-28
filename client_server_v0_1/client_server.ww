@@ -1,3 +1,5 @@
+const PROTOCOL_GID: u32 = 1;
+
 struct Request {
     seq: u16,
     path: Vec<nib16>,
